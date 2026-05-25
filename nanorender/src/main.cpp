@@ -48,9 +48,24 @@ int main() {
       // Simple gradient background
       int x = i % WIDTH;
       int y = i / WIDTH;
-      uint8_t r = (uint8_t)((float)x / WIDTH * 128) + 32;
-      uint8_t g = (uint8_t)((float)y / HEIGHT * 128) + 32;
-      uint8_t b = 64;
+      int squareSize = 350;
+      int left = (WIDTH - squareSize) / 2;
+      int top = (HEIGHT - squareSize) / 2;
+      int right = left + squareSize;
+      int bottom = top + squareSize;
+      uint8_t r, g, b;
+      if (x >= left && x < right && y >= top && y < bottom) {
+        float u = (x - left) / (float)(squareSize - 1);   // 0..1 across square width
+        float v = (y - top)  / (float)(squareSize - 1);   // 0..1 across square height
+
+        r = (uint8_t)(255.0f * (1.0f - u));  // red decreases left -> right
+        g = (uint8_t)(255.0f * u);           // green increases left -> right
+        b = (uint8_t)(255.0f * v);           // blue increases top -> bottom
+      } else {
+        r = (uint8_t)(x * 255 / WIDTH);
+        g = (uint8_t)(y * 255 / HEIGHT);
+        b = 64;
+      }
       g_buffer[i] = MFB_RGB(r, g, b);
     }
 
