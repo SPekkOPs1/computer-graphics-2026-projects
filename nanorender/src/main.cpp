@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <windows.h>
 extern "C" {
 #include "microui.h"
 }
@@ -13,6 +13,10 @@ extern "C" {
 #define HEIGHT 1200
 
 static uint32_t g_buffer[WIDTH * HEIGHT];
+
+static void on_custom_btn_click(){
+  MessageBoxA(nullptr, "This button has been clicked!", "Debug", MB_OK);
+}
 
 int main() {
   struct mfb_window *window =
@@ -94,7 +98,13 @@ int main() {
       if (mu_button(ctx, "mu_button: click me")) {
         quit_requested = false; // just a reaction
       }
-
+      if(mu_button(ctx, "Custom Made Button")) {
+        on_custom_btn_click();
+        
+      }
+      // This button uses a custom click handler instead of setting a flag 
+      
+      
       // checkbox
       mu_layout_row(ctx, 1, w1, 0);
       mu_checkbox(ctx, "mu_checkbox A (off)", &checkbox_a);

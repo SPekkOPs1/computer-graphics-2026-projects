@@ -22,10 +22,10 @@ Instead of writing 32-bit integers manually, we use a macro called `MFB_RGB(r, g
 Open `main.cpp` and locate the Scene Rendering (Background) loop. Notice the `for` loop iterating over `WIDTH * HEIGHT`. Inside, it calculates the 2D `x` and `y` coordinates based on the 1D index `i`. It then assigns a 32-bit color integer to `g_buffer[i]` using the `MFB_RGB(r, g, b)` macro.
 
 **Write a new mathematical expression for `r`, `g`, and `b` that will draw something different and creative.** Instead of just making a solid color, try generating gradients, shapes, or interesting patterns using the `x`, `y`, and `i` variables. Write a new expression that utilizes both the `x` and `y` coordinates to create a visible 2D pattern (e.g., a gradient, a checkerboard, or concentric circles). For full credit, the pattern cannot be a solid color or a 1D horizontal/vertical strip. Note: You are welcome to use AI to assist you in coming up with the math for these visual patterns!
-# {Got FULL MARK since I've used a gradient for the shape's color}
+**Got FULL MARK since I've used a gradient for the shape's color**
 
 
-### Part 2: Immediate Mode UI Declaration
+### Part 2: Immediate Mode UI Declaration [ COMPLETE ]
 
 ##### Background: The Basics of GUIs and Widgets
 A Graphical User Interface (GUI) allows users to interact with a program through visual building blocks. Depending on the software framework you use, these interactive building blocks go by many different names, most commonly **"widgets", "controls", "elements", or "components"**. 
