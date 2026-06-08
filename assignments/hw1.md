@@ -79,7 +79,7 @@ After applying your visual offset, attempt to click on a button. In your code co
 
 ---
 
-### Part 5: Binding UI to Application State
+### Part 5: Binding UI to Application State [ COMPLETE ]
 
 ##### Background: Memory Pointers and State Mutation
 Because Immediate Mode widgets are destroyed and recreated from scratch every single frame, they are fundamentally "stateless"—meaning they cannot store their own internal memory.
@@ -89,7 +89,7 @@ To function interactively, widgets instead take pointers to external variables t
 ##### Task
 In `main.cpp`, observe how the variable `slider_val` is passed into the slider widget using `mu_slider(ctx, &slider_val, 0, 100);`. **Design a new interactive feature** by declaring your own custom application state variables and binding them to brand new widgets (like sliders or checkboxes) inside the `mu_begin_window` block. Connect these newly bound variables to your background rendering loop from Part 1 so that interacting with your UI dynamically morphs, recolors, or animates the creative visual pattern you generated.
 
-### Part 6: Interactive Line Drawing App
+### Part 6: Interactive Line Drawing App [ COMPLETE ]
 
 ##### Background: Implementing the Algorithm
 In class, we discussed the theory behind **Bresenham's Line Algorithm** and how it elegantly approximates a straight line on a discrete pixel grid using only fast integer math. Now, it is time to translate that theory into a working renderer.

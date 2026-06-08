@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <windows.h>
 #include <math.h>
+#include <vector>
 extern "C" {
 #include "microui.h"
 }
@@ -23,6 +24,75 @@ static float g_wave_frequency = 0.05f;   // Adjusts size of wave visual elements
 static int g_invert_colors = 0;          // Hot toggle to invert all color pixels
 static float g_center_shift_x = 0.0f;    // Shift center of radial backgrounds
 static float g_center_shift_y = 0.0f;    // Shift center of radial backgrounds
+
+// Part 6 State Variables: Dynamic Interactive Line Drawing Canvas
+struct Line {
+  int x0, y0, x1, y1;
+  uint32_t color;
+};
+
+static std::vector<Line> g_lines;
+static bool g_drawing_line = false;
+static int g_line_start_x = 0;
+static int g_line_start_y = 0;
+
+static float g_line_r = 255.0f; // Slider bound red channel
+static float g_line_g = 255.0f; // Slider bound green channel
+static float g_line_b = 255.0f; // Slider bound blue channel
+
+static int g_brush_mode = 0;          // Continuous brush drawing state
+static int g_drawing_enabled = 1;     // Global safety toggle for canvas clicks
+static int g_spirograph_active = 0;  // Real-time procedural Spirograph
+static float g_spiro_R = 300.0f;     // Spirograph outer circle radius
+static float g_spiro_r = 180.0f;     // Spirograph inner circle radius
+static float g_spiro_p = 110.0f;     // Spirograph pen offset distance
+static float g_spiro_density = 400.0f; // Spirograph line/dot count detail
+
+static void draw_line(int x0, int y0, int x1, int y1, uint32_t color) {
+  int dx = abs(x1 - x0);
+  int sx = x0 < x1 ? 1 : -1;
+  int dy = -abs(y1 - y0);
+  int sy = y0 < y1 ? 1 : -1;
+  int err = dx + dy;
+  while (true) {
+    if (x0 >= 0 && x0 < WIDTH && y0 >= 0 && y0 < HEIGHT) {
+      g_buffer[y0 * WIDTH + x0] = color;
+    }
+    if (x0 == x1 && y0 == y1) break;
+    int e2 = 2 * err;
+    if (e2 >= dy) { err += dy; x0 += sx; }
+    if (e2 <= dx) { err += dx; y0 += sy; }
+  }
+}
+
+static void draw_spirograph() {
+  float R = g_spiro_R;
+  float r = g_spiro_r;
+  if (r == 0.0f) r = 1.0f; // avoid division by zero
+  float p = g_spiro_p;
+  int limit = (int)g_spiro_density;
+  if (limit <= 0) return;
+
+  float cx = WIDTH / 2.0f;
+  float cy = HEIGHT / 2.0f;
+  uint32_t color = MFB_RGB((uint8_t)g_line_r, (uint8_t)g_line_g, (uint8_t)g_line_b);
+
+  int prev_x = -1, prev_y = -1;
+  for (int i = 0; i <= limit; i++) {
+    float theta = (i * 2.0f * 3.14159265f * 12.0f) / limit; // 12 rounds
+    float x = (R - r) * cosf(theta) + p * cosf((R - r) * theta / r) + cx;
+    float y = (R - r) * sinf(theta) - p * sinf((R - r) * theta / r) + cy;
+
+    int px = (int)x;
+    int py = (int)y;
+    if (i > 0 && prev_x >= 0 && prev_x < WIDTH && prev_y >= 0 && prev_y < HEIGHT &&
+        px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
+      draw_line(prev_x, prev_y, px, py, color);
+    }
+    prev_x = px;
+    prev_y = py;
+  }
+}
 
 static void on_custom_btn_click(){
   MessageBoxA(nullptr, "This button has been clicked!", "Debug", MB_OK);
@@ -62,6 +132,39 @@ int main() {
   while (mfb_update_events(window) != MFB_STATE_EXIT) {
     // 1. Input
     ui_bridge_input(ctx, window);
+
+    // Part 6 Input Logic: Handle interactive line building
+    uint32_t current_line_color = MFB_RGB((uint8_t)g_line_r, (uint8_t)g_line_g, (uint8_t)g_line_b);
+    if (g_drawing_enabled) {
+      if (!ctx->hover_root) {
+        if (ctx->mouse_pressed & MU_MOUSE_LEFT) {
+          g_drawing_line = true;
+          g_line_start_x = ctx->mouse_pos.x;
+          g_line_start_y = ctx->mouse_pos.y;
+        }
+      }
+
+      if (g_drawing_line) {
+        if (g_brush_mode) {
+          int curr_x = ctx->mouse_pos.x;
+          int curr_y = ctx->mouse_pos.y;
+          if (curr_x != g_line_start_x || curr_y != g_line_start_y) {
+            g_lines.push_back({ g_line_start_x, g_line_start_y, curr_x, curr_y, current_line_color });
+            g_line_start_x = curr_x;
+            g_line_start_y = curr_y;
+          }
+        }
+
+        if (!(ctx->mouse_down & MU_MOUSE_LEFT)) {
+          if (!g_brush_mode) {
+            g_lines.push_back({ g_line_start_x, g_line_start_y, ctx->mouse_pos.x, ctx->mouse_pos.y, current_line_color });
+          }
+          g_drawing_line = false;
+        }
+      }
+    } else {
+      g_drawing_line = false;
+    }
 
     // 2. Scene Rendering (Background)
     g_frame_counter++;
@@ -142,6 +245,19 @@ int main() {
       }
 
       g_buffer[i] = MFB_RGB(r, g, b);
+    }
+
+    // Part 6 Rendering: Draw Spirographs, Permanent Lines and Previews on top of Background
+    if (g_spirograph_active) {
+      draw_spirograph();
+    }
+
+    for (const auto& line : g_lines) {
+      draw_line(line.x0, line.y0, line.x1, line.y1, line.color);
+    }
+
+    if (g_drawing_line && !g_brush_mode) {
+      draw_line(g_line_start_x, g_line_start_y, ctx->mouse_pos.x, ctx->mouse_pos.y, current_line_color);
     }
 
     // 3. UI Logic
@@ -283,6 +399,64 @@ int main() {
           mu_get_current_container(ctx)->open = 0;
         }
         mu_end_window(ctx);
+      }
+      mu_end_window(ctx);
+    }
+
+    // --- Interactive Drawing Tool window ---
+    if (mu_begin_window(ctx, "Interactive Line Drawer", mu_rect(790, 20, 380, 480))) {
+      int wd[] = {-1};
+      mu_layout_row(ctx, 1, wd, 0);
+      mu_label(ctx, "Left Click & Drag on background to draw!");
+
+      mu_layout_row(ctx, 1, wd, 0);
+      mu_checkbox(ctx, "Enable Drawing Click", &g_drawing_enabled);
+
+      mu_layout_row(ctx, 1, wd, 0);
+      mu_checkbox(ctx, "Continuous Brush Mode", &g_brush_mode);
+
+      mu_layout_row(ctx, 1, wd, 0);
+      mu_label(ctx, "RGB Line / Brush Color:");
+      mu_slider(ctx, &g_line_r, 0, 255);
+      mu_slider(ctx, &g_line_g, 0, 255);
+      mu_slider(ctx, &g_line_b, 0, 255);
+
+      char hex_col[64];
+      snprintf(hex_col, sizeof(hex_col), "Active Color: (R:%d, G:%d, B:%d)", (int)g_line_r, (int)g_line_g, (int)g_line_b);
+      mu_layout_row(ctx, 1, wd, 0);
+      mu_text(ctx, hex_col);
+
+      // Buttons for editing lines list
+      mu_layout_row(ctx, 1, wd, 0);
+      if (mu_button(ctx, "Clear Canvas")) {
+        g_lines.clear();
+      }
+      if (mu_button(ctx, "Undo Last Line")) {
+        if (!g_lines.empty()) {
+          g_lines.pop_back();
+        }
+      }
+
+      // Spirograph section
+      if (mu_header(ctx, "Advanced Spirograph Generator")) {
+        mu_layout_row(ctx, 1, wd, 0);
+        mu_checkbox(ctx, "Activate Spirograph Overlay", &g_spirograph_active);
+
+        mu_layout_row(ctx, 1, wd, 0);
+        mu_label(ctx, "Outer Ring R:");
+        mu_slider(ctx, &g_spiro_R, 10, 500);
+
+        mu_layout_row(ctx, 1, wd, 0);
+        mu_label(ctx, "Inner Wheel r:");
+        mu_slider(ctx, &g_spiro_r, 10, 500);
+
+        mu_layout_row(ctx, 1, wd, 0);
+        mu_label(ctx, "Pen Distance p:");
+        mu_slider(ctx, &g_spiro_p, 10, 500);
+
+        mu_layout_row(ctx, 1, wd, 0);
+        mu_label(ctx, "Line Segment Density:");
+        mu_slider(ctx, &g_spiro_density, 50, 2000);
       }
       mu_end_window(ctx);
     }
