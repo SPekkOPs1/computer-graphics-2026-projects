@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+#include <math.h>
 extern "C" {
 #include "microui.h"
 }
@@ -13,6 +14,8 @@ extern "C" {
 #define HEIGHT 1200
 
 static uint32_t g_buffer[WIDTH * HEIGHT];
+static int g_visual_mode = 0;
+static uint32_t g_frame_counter = 0;
 
 static void on_custom_btn_click(){
   MessageBoxA(nullptr, "This button has been clicked!", "Debug", MB_OK);
@@ -39,6 +42,12 @@ int main() {
   mfb_set_char_input_callback(
       [](struct mfb_window *w, unsigned int c) {
         extern void ui_bridge_char_input(struct mfb_window *, unsigned int);
+        // Intercept key 'v' or 'V' (ASCII 118 or 86) to cycle visual effects
+        if (c == 'v' || c == 'V') {
+          g_visual_mode = (g_visual_mode + 1) % 4;
+          printf("Keyboard callback: Intercepted '%c', toggling visual mode to %d\n", (char)c, g_visual_mode);
+          return; // Consume the key event so it doesn't get forwarded to the UI textboxes
+        }
         ui_bridge_char_input(w, c);
       },
       window);
@@ -48,28 +57,74 @@ int main() {
     ui_bridge_input(ctx, window);
 
     // 2. Scene Rendering (Background)
+    g_frame_counter++;
     for (int i = 0; i < WIDTH * HEIGHT; i++) {
-      // Simple gradient background
       int x = i % WIDTH;
       int y = i / WIDTH;
-      int squareSize = 350;
-      int left = (WIDTH - squareSize) / 2;
-      int top = (HEIGHT - squareSize) / 2;
-      int right = left + squareSize;
-      int bottom = top + squareSize;
-      uint8_t r, g, b;
-      if (x >= left && x < right && y >= top && y < bottom) {
-        float u = (x - left) / (float)(squareSize - 1);   // 0..1 across square width
-        float v = (y - top)  / (float)(squareSize - 1);   // 0..1 across square height
+      uint8_t r = 0, g = 0, b = 0;
 
-        r = (uint8_t)(255.0f * (1.0f - u));  // red decreases left -> right
-        g = (uint8_t)(255.0f * u);           // green increases left -> right
-        b = (uint8_t)(255.0f * v);           // blue increases top -> bottom
-      } else {
-        r = (uint8_t)(x * 255 / WIDTH);
-        g = (uint8_t)(y * 255 / HEIGHT);
-        b = 64;
+      if (g_visual_mode == 0) {
+        // Simple gradient background
+        int squareSize = 350;
+        int left = (WIDTH - squareSize) / 2;
+        int top = (HEIGHT - squareSize) / 2;
+        int right = left + squareSize;
+        int bottom = top + squareSize;
+        if (x >= left && x < right && y >= top && y < bottom) {
+          float u = (x - left) / (float)(squareSize - 1);   // 0..1 across square width
+          float v = (y - top)  / (float)(squareSize - 1);   // 0..1 across square height
+
+          r = (uint8_t)(255.0f * (1.0f - u));  // red decreases left -> right
+          g = (uint8_t)(255.0f * u);           // green increases left -> right
+          b = (uint8_t)(255.0f * v);           // blue increases top -> bottom
+        } else {
+          r = (uint8_t)(x * 255 / WIDTH);
+          g = (uint8_t)(y * 255 / HEIGHT);
+          b = 64;
+        }
+      } else if (g_visual_mode == 1) {
+        // Rainbow Ripple/Wave: radial animation centered on screen
+        float cx = WIDTH / 2.0f;
+        float cy = HEIGHT / 2.0f;
+        float dx = x - cx;
+        float dy = y - cy;
+        float dist = sqrtf(dx * dx + dy * dy);
+        // animated wave using frame counter
+        float wave = sinf(dist * 0.05f - g_frame_counter * 0.1f);
+        r = (uint8_t)((wave + 1.0f) * 0.5f * 255);
+        g = (uint8_t)((sinf(dist * 0.03f + g_frame_counter * 0.05f) + 1.0f) * 0.5f * 255);
+        b = (uint8_t)((cosf(dist * 0.02f - g_frame_counter * 0.08f) + 1.0f) * 0.5f * 255);
+      } else if (g_visual_mode == 2) {
+        // Digital Matrix Glitch Rain
+        int col = x / 16;
+        int row = y / 20;
+        int speed = (col * 17) % 13 + 5;
+        int offset = (g_frame_counter * speed) % HEIGHT;
+        int intensity = (y + offset) % HEIGHT;
+        if (intensity < 150) {
+          g = 255 - (intensity * 255 / 150);
+          r = g > 150 ? (g - 150) : 0;
+          b = r;
+        } else {
+          g = 0; r = 0; b = 0;
+        }
+        if (x % 32 == 0 || y % 40 == 0) {
+          g = (g / 2) + 40;
+        }
+      } else if (g_visual_mode == 3) {
+        // Psychedelic Hyperspace Tunnel
+        float cx = WIDTH / 2.0f;
+        float cy = HEIGHT / 2.0f;
+        float dx = x - cx;
+        float dy = y - cy;
+        float angle = atan2f(dy, dx);
+        float dist = sqrtf(dx * dx + dy * dy);
+        float value = sinf(angle * 8.0f + logf(dist + 1.0f) * 5.0f - g_frame_counter * 0.15f);
+        r = (uint8_t)((value + 1.0f) * 0.5f * 128 + 64);
+        g = (uint8_t)((sinf(g_frame_counter * 0.1f) + 1.0f) * 0.5f * 128);
+        b = (uint8_t)((cosf(angle - g_frame_counter * 0.05f) + 1.0f) * 0.5f * 200);
       }
+
       g_buffer[i] = MFB_RGB(r, g, b);
     }
 
