@@ -129,7 +129,19 @@ void UIRenderer::draw_rect(mu_Rect rect, mu_Color color) {
 
     for (int y = y1; y < y2; y++) {
         for (int x = x1; x < x2; x++) {
-            m_buffer[y * m_width + x] = c;
+            // Stylistic Override: Offset visual output 150px right, 100px down.
+            // Explanation of click behavior:
+            // Immediate mode UI (MicroUI) computes logical bounds (like where a mouse click occurs)
+            // using the original, un-renderer-shifted coordinates. The renderer, however, only draws
+            // the button's graphics at this shifted coordinate. Therefore:
+            // 1. Clicking on the visual representation of the button fails because the logical button bounding box remains at (x, y).
+            // 2. To successfully click/trigger the button, the mouse cursor must be placed at the ORIGINAL,
+            //    un-shifted location, which is exactly 150 pixels to the LEFT and 100 pixels ABOVE the visual display!
+            int visual_x = x + 150;
+            int visual_y = y + 100;
+            if (visual_x >= 0 && visual_x < m_width && visual_y >= 0 && visual_y < m_height) {
+                m_buffer[visual_y * m_width + visual_x] = c;
+            }
         }
     }
 }
@@ -149,7 +161,12 @@ void UIRenderer::draw_text(const char* text, mu_Vec2 pos, mu_Color color) {
                     if (px >= m_clip_rect.x && px < m_clip_rect.x + m_clip_rect.w &&
                         py >= m_clip_rect.y && py < m_clip_rect.y + m_clip_rect.h &&
                         px >= 0 && px < m_width && py >= 0 && py < m_height) {
-                        m_buffer[py * m_width + px] = c;
+                        // Stylistic Override: Offset visual output 150px right, 100px down.
+                        int visual_x = px + 150;
+                        int visual_y = py + 100;
+                        if (visual_x >= 0 && visual_x < m_width && visual_y >= 0 && visual_y < m_height) {
+                            m_buffer[visual_y * m_width + visual_x] = c;
+                        }
                     }
                 }
             }
@@ -162,7 +179,12 @@ void UIRenderer::draw_pixel(int x, int y, uint32_t c) {
     if (x < m_clip_rect.x || x >= m_clip_rect.x + m_clip_rect.w) return;
     if (y < m_clip_rect.y || y >= m_clip_rect.y + m_clip_rect.h) return;
     if (x < 0 || x >= m_width || y < 0 || y >= m_height) return;
-    m_buffer[y * m_width + x] = c;
+    // Stylistic Override: Offset visual output 150px right, 100px down.
+    int visual_x = x + 150;
+    int visual_y = y + 100;
+    if (visual_x >= 0 && visual_x < m_width && visual_y >= 0 && visual_y < m_height) {
+        m_buffer[visual_y * m_width + visual_x] = c;
+    }
 }
 
 void UIRenderer::draw_line(int x0, int y0, int x1, int y1, uint32_t c) {

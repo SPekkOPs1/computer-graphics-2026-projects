@@ -48,7 +48,7 @@ In this project, we are using a library called **MicroUI**, which implements an 
 In `main.cpp` under the `mu_begin(ctx)` block, add a new interactive widget (such as a button or checkbox) that simply prints a message to the console or toggles a static text label within the MicroUI window. This will allow you to practice Immediate Mode syntax and UI layout without worrying about the broader application state yet.
 
 
-### Part 3: The Real-Time Graphics Loop and Input Handling
+### Part 3: The Real-Time Graphics Loop and Input Handling [ COMPLETE ]
 
 ##### Background: The Event Loop and Callbacks
 To maintain a smooth framerate and interactive application, the program executes a strict chronological sequence of operations many times per second—commonly referred to as the **event loop**. In our code, this primary loop is controlled by `while (mfb_update_events(window) != MFB_STATE_EXIT)`. 
@@ -63,7 +63,7 @@ In `main.cpp`, locate the character input callback (`mfb_set_char_input_callback
 *Note on event consumption:* If you intercept an event here, you must decide whether to "consume" it (stop the UI from seeing it) or pass it along to the UI bridge (`g_pending_text`) so normal widgets still function correctly.
 
 
-### Part 4: UI Architecture & The Renderer Bridge
+### Part 4: UI Architecture & The Renderer Bridge [ COMPLETE ]
 
 ##### Background: Abstract State vs. Visual Rendering
 As you have learned, MicroUI generates an abstract list of commands, such as drawing rectangles, text, or icons. However, MicroUI itself has absolutely no concept of pixels or how to draw them to your screen.

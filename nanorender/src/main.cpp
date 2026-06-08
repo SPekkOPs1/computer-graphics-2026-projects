@@ -17,6 +17,13 @@ static uint32_t g_buffer[WIDTH * HEIGHT];
 static int g_visual_mode = 0;
 static uint32_t g_frame_counter = 0;
 
+// Part 5 State Variables: Custom application variables bound to UI controls
+static float g_color_speed = 1.0f;       // Speeds up color cyclers/waves
+static float g_wave_frequency = 0.05f;   // Adjusts size of wave visual elements
+static int g_invert_colors = 0;          // Hot toggle to invert all color pixels
+static float g_center_shift_x = 0.0f;    // Shift center of radial backgrounds
+static float g_center_shift_y = 0.0f;    // Shift center of radial backgrounds
+
 static void on_custom_btn_click(){
   MessageBoxA(nullptr, "This button has been clicked!", "Debug", MB_OK);
 }
@@ -63,11 +70,15 @@ int main() {
       int y = i / WIDTH;
       uint8_t r = 0, g = 0, b = 0;
 
+      // Base Center with shifting sliders
+      float cx = (WIDTH / 2.0f) + g_center_shift_x;
+      float cy = (HEIGHT / 2.0f) + g_center_shift_y;
+
       if (g_visual_mode == 0) {
-        // Simple gradient background
+        // Simple gradient background centered around shifted coordinate
         int squareSize = 350;
-        int left = (WIDTH - squareSize) / 2;
-        int top = (HEIGHT - squareSize) / 2;
+        int left = (int)cx - squareSize / 2;
+        int top = (int)cy - squareSize / 2;
         int right = left + squareSize;
         int bottom = top + squareSize;
         if (x >= left && x < right && y >= top && y < bottom) {
@@ -78,27 +89,27 @@ int main() {
           g = (uint8_t)(255.0f * u);           // green increases left -> right
           b = (uint8_t)(255.0f * v);           // blue increases top -> bottom
         } else {
+          // background gradient is affected by color speed
           r = (uint8_t)(x * 255 / WIDTH);
           g = (uint8_t)(y * 255 / HEIGHT);
-          b = 64;
+          b = (uint8_t)(64 * g_color_speed);
         }
       } else if (g_visual_mode == 1) {
-        // Rainbow Ripple/Wave: radial animation centered on screen
-        float cx = WIDTH / 2.0f;
-        float cy = HEIGHT / 2.0f;
+        // Rainbow Ripple/Wave: radial animation centered on shifted coordinates
         float dx = x - cx;
         float dy = y - cy;
         float dist = sqrtf(dx * dx + dy * dy);
-        // animated wave using frame counter
-        float wave = sinf(dist * 0.05f - g_frame_counter * 0.1f);
+        // animated wave using frame counter and active UI state bindings
+        float wave = sinf(dist * g_wave_frequency - g_frame_counter * 0.1f * g_color_speed);
         r = (uint8_t)((wave + 1.0f) * 0.5f * 255);
-        g = (uint8_t)((sinf(dist * 0.03f + g_frame_counter * 0.05f) + 1.0f) * 0.5f * 255);
-        b = (uint8_t)((cosf(dist * 0.02f - g_frame_counter * 0.08f) + 1.0f) * 0.5f * 255);
+        g = (uint8_t)((sinf(dist * (g_wave_frequency * 0.6f) + g_frame_counter * 0.05f * g_color_speed) + 1.0f) * 0.5f * 255);
+        b = (uint8_t)((cosf(dist * (g_wave_frequency * 0.4f) - g_frame_counter * 0.08f * g_color_speed) + 1.0f) * 0.5f * 255);
       } else if (g_visual_mode == 2) {
-        // Digital Matrix Glitch Rain
+        // Digital Matrix Glitch Rain: column grid speed altered by g_color_speed
         int col = x / 16;
         int row = y / 20;
-        int speed = (col * 17) % 13 + 5;
+        int speed = (int)(((col * 17) % 13 + 5) * g_color_speed);
+        if (speed <= 0) speed = 1;
         int offset = (g_frame_counter * speed) % HEIGHT;
         int intensity = (y + offset) % HEIGHT;
         if (intensity < 150) {
@@ -112,17 +123,22 @@ int main() {
           g = (g / 2) + 40;
         }
       } else if (g_visual_mode == 3) {
-        // Psychedelic Hyperspace Tunnel
-        float cx = WIDTH / 2.0f;
-        float cy = HEIGHT / 2.0f;
+        // Psychedelic Hyperspace Tunnel with frequency and rotation speed sliders
         float dx = x - cx;
         float dy = y - cy;
         float angle = atan2f(dy, dx);
         float dist = sqrtf(dx * dx + dy * dy);
-        float value = sinf(angle * 8.0f + logf(dist + 1.0f) * 5.0f - g_frame_counter * 0.15f);
+        float value = sinf(angle * 8.0f + logf(dist + 1.0f) * (g_wave_frequency * 100.0f) - g_frame_counter * 0.15f * g_color_speed);
         r = (uint8_t)((value + 1.0f) * 0.5f * 128 + 64);
-        g = (uint8_t)((sinf(g_frame_counter * 0.1f) + 1.0f) * 0.5f * 128);
-        b = (uint8_t)((cosf(angle - g_frame_counter * 0.05f) + 1.0f) * 0.5f * 200);
+        g = (uint8_t)((sinf(g_frame_counter * 0.1f * g_color_speed) + 1.0f) * 0.5f * 128);
+        b = (uint8_t)((cosf(angle - g_frame_counter * 0.05f * g_color_speed) + 1.0f) * 0.5f * 200);
+      }
+
+      // Hot toggle to invert all background colors
+      if (g_invert_colors) {
+        r = 255 - r;
+        g = 255 - g;
+        b = 255 - b;
       }
 
       g_buffer[i] = MFB_RGB(r, g, b);
@@ -174,6 +190,28 @@ int main() {
       mu_layout_row(ctx, 1, w1, 0);
       mu_label(ctx, "mu_slider (0-100):");
       mu_slider(ctx, &slider_val, 0, 100);
+
+      // Part 5: New State Binding Controls & Widgets Section
+      if (mu_header(ctx, "Custom Background Morph Controls")) {
+        mu_layout_row(ctx, 1, w1, 0);
+        mu_checkbox(ctx, "Invert Background Colors", &g_invert_colors);
+
+        mu_layout_row(ctx, 1, w1, 0);
+        mu_label(ctx, "Animation Speed:");
+        mu_slider(ctx, &g_color_speed, 0, 5);
+
+        mu_layout_row(ctx, 1, w1, 0);
+        mu_label(ctx, "Wave Frequency:");
+        mu_slider(ctx, &g_wave_frequency, 0.005f, 0.2f);
+
+        mu_layout_row(ctx, 1, w1, 0);
+        mu_label(ctx, "Shift X Coordinate:");
+        mu_slider(ctx, &g_center_shift_x, -400.0f, 400.0f);
+
+        mu_layout_row(ctx, 1, w1, 0);
+        mu_label(ctx, "Shift Y Coordinate:");
+        mu_slider(ctx, &g_center_shift_y, -300.0f, 300.0f);
+      }
 
       // number
       mu_layout_row(ctx, 1, w1, 0);
