@@ -120,7 +120,7 @@ However, you are highly encouraged to push the limits of your architecture. An a
 
 Design an interface and visual result that you are proud of!
 
-### Part 7: Pair Programming Extensions
+### Part 7: Pair Programming Extensions [ COMPLETE ]
 
 *Students working in pairs are required to complete the following three extensions to receive full credit.*
 
