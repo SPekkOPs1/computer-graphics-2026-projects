@@ -190,7 +190,22 @@ int main() {
             }
         }
 
-        // TODO Part 3: draw wireframe edges with draw_line() using sx/sy
+        // Part 3: orthographic wireframe — for each triangle, connect its three
+        // projected vertices (z already dropped during projection above).
+        if (mesh_loaded) {
+            const uint32_t wire = MFB_RGB(200, 220, 255);
+            const int n = (int)mesh.vertices.size();
+            for (const Face& face : mesh.faces) {
+                int a = face.v[0], b = face.v[1], c = face.v[2];
+                // Skip faces with out-of-range indices (malformed .obj)
+                if (a < 0 || a >= n || b < 0 || b >= n || c < 0 || c >= n)
+                    continue;
+                draw_line(sx[a], sy[a], sx[b], sy[b], wire);
+                draw_line(sx[b], sy[b], sx[c], sy[c], wire);
+                draw_line(sx[c], sy[c], sx[a], sy[a], wire);
+            }
+        }
+
         // TODO Part 4: Build Local/World transformation matrix GUI
         // TODO Part 5: Apply transformation matrices before projection
         // TODO Part 6: Keyboard/mouse input to modify transform state

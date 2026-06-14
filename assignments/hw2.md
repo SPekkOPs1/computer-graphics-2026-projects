@@ -29,7 +29,7 @@ Before we can draw anything, we must parse a 3D model file from the hard drive a
 
 Write a function that loads an `.obj` file. To check your code, create an `.obj` file that contains an object with up to 10 vertices and faces, load it, and display the number of faces and vertices in the GUI and see if it matches the content of the file. You may display more information as seem necessary.
 
-### Part 2: Normalization and the Viewport Transform
+### Part 2: Normalization and the Viewport Transform [ COMPLETE ]
 
 When you load a mesh, its vertex coordinates are completely arbitrary. A model of an ant might have coordinates ranging from $-0.01$ to $0.01$, while a model of a city block might range from $-5000$ to $5000$, but it could also be the opposite. There are no guarantees.
 
@@ -39,7 +39,7 @@ If you try to draw these raw coordinates directly to your framebuffer (which lik
 
 Write an algorithm to find the bounding box of your loaded mesh (the minimum and maximum $x$, $y$, and $z$ values). Using this information, calculate a uniform scale factor and a translation vector to map the model's vertices so that they fit comfortably within your window's dimensions (e.g., scaling them up/down to around $0-1000$ and centering them). In your report, write a brief explanation of the mathematical logic you used to calculate this specific bounding-box-to-window transformation.
 
-### Part 3: Orthographic Projection and Wireframe Rendering
+### Part 3: Orthographic Projection and Wireframe Rendering [ COMPLETE ]
 
 Our screen is a 2D grid of pixels, but our mesh exists in 3D space. To draw it, we must mathematically flatten the 3D vertices into 2D points.
 
