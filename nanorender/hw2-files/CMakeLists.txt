@@ -11,3 +11,9 @@ target_include_directories(hw2 PRIVATE
     ${microui_SOURCE_DIR}/src
     ${minifb_SOURCE_DIR}/include
 )
+
+# Bake the absolute assets path so the exe can find .obj files regardless of
+# what directory it is launched from.
+target_compile_definitions(hw2 PRIVATE
+    "HW2_ASSETS_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/assets\""
+)

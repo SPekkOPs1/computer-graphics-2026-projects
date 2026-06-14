@@ -4,7 +4,7 @@
 
 In this assignment, you will transition from drawing 2D pixels to manipulating 3D geometry. You will load a 3D mesh into memory, project its vertices onto your 2D screen, and draw it using the line-drawing algorithm you built in Assignment 1. Finally, you will implement mathematical transformations (scaling, rotation, and translation) and wire them up to your Immediate Mode GUI to manipulate the 3D object in real-time.
 
-### Part 0: Introduction to GLM
+### Part 0: Introduction to GLM [ COMPLETE ]
 
 In computer graphics, manipulating 3D objects requires a lot of linear algebra, specifically vectors and matrices. Writing your own math library from scratch can be tedious and prone to errors. Instead, the industry standard for OpenGL and similar graphics applications is **GLM** (OpenGL Mathematics). GLM is a header-only C++ mathematics library based on the OpenGL Shading Language (GLSL) specifications, making it incredibly useful for transformations and vector math.
 
@@ -15,7 +15,7 @@ Before proceeding to 3D transformations, you need to integrate GLM into your pro
 
 Verify that the project successfully configures, compiles, and the small GLM example runs without errors.
 
-### Part 1: Loading and Inspecting 3D Data
+### Part 1: Loading and Inspecting 3D Data [ COMPLETE ]
 
 In computer graphics, 3D objects are typically represented as a **polygon mesh**. A mesh consists of two primary lists of data:
 
